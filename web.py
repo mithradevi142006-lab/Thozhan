@@ -14,7 +14,10 @@ instruction = (
     "You are THOZHAN, a friendly assistant who helps a student build projects. "
     "Guide them with numbered steps, one step at a time. "
     "Use simple English and simple Python code. "
+    "A screenshot is attached only when the student has captured their screen. "
     "When a screenshot is attached, it shows the student's screen. "
+    "If no screenshot is attached, just reply to the message and do not talk about the screen. "
+    "If the student asks for a short answer, keep it to one or two sentences. "
 )
 
 if os.path.exists("project.txt"):
@@ -37,6 +40,7 @@ def make_chat():
 
 
 chat = make_chat()
+
 app = Flask(__name__)
 
 latest_img = None
@@ -58,7 +62,7 @@ PAGE = """
 <style>
 body { font-family: Arial; max-width: 700px; margin: 30px auto; }
 #box { border: 1px solid #ccc; height: 400px; overflow-y: auto; padding: 10px; white-space: pre-wrap; }
-input { width: 80%; padding: 8px; }
+input[type=text] { width: 60%; padding: 8px; }
 button { padding: 8px; }
 </style>
 </head>
@@ -67,15 +71,20 @@ button { padding: 8px; }
 <div id="box"></div>
 <div id="status"></div>
 <br>
-<input id="q" placeholder="Ask THOZHAN...">
+<input type="text" id="q" placeholder="Ask THOZHAN...">
 <button onclick="send()">Send</button>
 <button onclick="newChat()">New chat</button>
 <label><input type="checkbox" id="voice" checked> Voice</label>
 <button onclick="listen()">🎤 Speak</button>
-
-
 <script>
 var waiting = false;
+
+function speak(text) {
+  var clean = text.replace(/[*#`]/g, "").slice(0, 600);
+  window.speechSynthesis.cancel();
+  var u = new SpeechSynthesisUtterance(clean);
+  window.speechSynthesis.speak(u);
+}
 
 function listen() {
   var SR = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -102,12 +111,6 @@ function listen() {
   rec.start();
 }
 
-function speak(text) {
-  var clean = text.replace(/[*#`]/g, "").slice(0, 600);
-  window.speechSynthesis.cancel();
-  var u = new SpeechSynthesisUtterance(clean);
-  window.speechSynthesis.speak(u);
-}
 async function send() {
   if (waiting) { return; }
   var q = document.getElementById("q");
@@ -134,11 +137,13 @@ async function send() {
   box.scrollTop = box.scrollHeight;
   waiting = false;
 }
+
 async function newChat() {
   window.speechSynthesis.cancel();
   await fetch("/new", {method: "POST"});
   document.getElementById("box").innerText = "";
 }
+
 document.getElementById("q").addEventListener("keydown", function(e) {
   if (e.key == "Enter") { send(); }
 });
@@ -157,7 +162,7 @@ def home():
 def ask():
     global latest_img
     question = request.json["question"]
-
+    print("Screenshot attached:", latest_img is not None)
     if latest_img is not None:
         content = [latest_img, question]
         latest_img = None
@@ -173,6 +178,7 @@ def ask():
             break
         except Exception as e:
             last_error = e
+            print("Attempt", attempt, "failed:", str(e)[:150])
             if "429" in str(e):
                 break
             time.sleep(5)
@@ -192,4 +198,6 @@ def new_chat():
     global chat
     chat = make_chat()
     return jsonify({"ok": True})
-app.run(port=5000) 
+
+
+app.run(port=5000)

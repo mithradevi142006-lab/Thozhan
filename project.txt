@@ -1,4 +1,5 @@
-Project: THOZHAN, an AI assistant that sees my screen and guides me.
+Project: THOZHAN, an AI assistant that sees my screen (only after I press Ctrl+Shift+X) and guides me.
 Language: Python
-Libraries: google-genai, pyautogui, python-dotenv
-Goal: help me build and debug my projects step by step.
+Libraries: google-genai, pyautogui, python-dotenv, flask, keyboard, pyttsx3
+Status: Already built and working: screenshot hotkey, chat with memory, history, voice input and output, terminal version (thozhan.py) and web version (web.py). Do not repeat setup or install steps unless I ask.
+Goal: help me with my projects, give short step by step guidance, and explain errors I show.

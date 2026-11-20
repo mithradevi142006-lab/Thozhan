@@ -1,5 +1,7 @@
 .env
+.venv/
 history.txt
 test.png
 __pycache__/
 *_backup.py
+.vscode/

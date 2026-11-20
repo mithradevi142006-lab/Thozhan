@@ -1,8 +1,8 @@
-import pyttsx3
 import os
 import time
 import keyboard
 import pyautogui
+import pyttsx3
 from dotenv import load_dotenv
 from google import genai
 from google.genai import types
@@ -10,19 +10,18 @@ from google.genai import types
 load_dotenv()
 client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
 
-instruction = ( 
+instruction = (
     "You are THOZHAN, a friendly assistant who helps a student build projects. "
     "You can see the student's screen in each message. "
     "Guide them with numbered steps, one step at a time. "
     "Use simple English and simple Python code. "
-    "If you see an error on the screen, explain that exact error and how to fix it."
+    "If you see an error on the screen, explain that exact error and how to fix it. "
     "If the student asks for a short answer, keep it to one or two sentences. "
-) 
+)
 
 if os.path.exists("project.txt"):
     with open("project.txt", "r", encoding="utf-8") as f:
-        project_info = f.read()
-    instruction = instruction + "\n\nThe student's current project:\n" + project_info
+        instruction = instruction + "\n\nThe student's current project:\n" + f.read()
     print("Project info loaded.")
 else:
     print("No project.txt found. Running without project info.")
@@ -35,11 +34,13 @@ if os.path.exists("history.txt"):
         instruction = instruction + "\n\nEarlier conversation with the student (for context only):\n" + old_chat
         print("Past history loaded.")
 
+
 def make_chat():
     return client.chats.create(
         model="gemini-3.6-flash",
         config=types.GenerateContentConfig(system_instruction=instruction),
     )
+
 
 def speak(text):
     clean = text.replace("*", "").replace("#", "").replace("`", "")
@@ -48,6 +49,7 @@ def speak(text):
     engine.setProperty("rate", 170)
     engine.say(clean)
     engine.runAndWait()
+
 
 chat = make_chat()
 
@@ -70,7 +72,6 @@ while True:
 
     print("Switch to your screen and press Ctrl+Shift+X to send...")
     keyboard.wait("ctrl+shift+x")
-
     img = pyautogui.screenshot()
     print("Screen captured! Thinking...")
 
@@ -87,7 +88,7 @@ while True:
                 break
             time.sleep(5)
 
-        print() 
+    print()
     if answer:
         print("THOZHAN:", answer)
         with open("history.txt", "a", encoding="utf-8") as f:
