@@ -1,0 +1,7 @@
+google-genai
+pillow
+pyautogui
+python-dotenv
+keyboard
+pyttsx3
+flask
