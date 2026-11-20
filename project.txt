@@ -1,0 +1,4 @@
+Project: THOZHAN, an AI assistant that sees my screen and guides me.
+Language: Python
+Libraries: google-genai, pyautogui, python-dotenv
+Goal: help me build and debug my projects step by step.

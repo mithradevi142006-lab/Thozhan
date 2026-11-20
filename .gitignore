@@ -1,0 +1,5 @@
+.env
+history.txt
+test.png
+__pycache__/
+*_backup.py
