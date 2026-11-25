@@ -37,7 +37,7 @@ if os.path.exists("history.txt"):
 
 def make_chat():
     return client.chats.create(
-        model="gemini-3.6-flash",
+        model="gemini-flash-lite-latest",
         config=types.GenerateContentConfig(system_instruction=instruction),
     )
 

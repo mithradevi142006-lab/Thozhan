@@ -34,7 +34,7 @@ if os.path.exists("history.txt"):
 
 def make_chat():
     return client.chats.create(
-        model="gemini-3.6-flash",
+        model="gemini-flash-lite-latest",
         config=types.GenerateContentConfig(system_instruction=instruction),
     )
 
@@ -58,26 +58,137 @@ PAGE = """
 <!DOCTYPE html>
 <html>
 <head>
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <title>THOZHAN</title>
 <style>
-body { font-family: Arial; max-width: 700px; margin: 30px auto; }
-#box { border: 1px solid #ccc; height: 400px; overflow-y: auto; padding: 10px; white-space: pre-wrap; }
-input[type=text] { width: 60%; padding: 8px; }
-button { padding: 8px; }
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  font-family: "Segoe UI", Arial, sans-serif;
+  background: #eef2f7;
+  display: flex;
+  justify-content: center;
+}
+#app {
+  width: 100%;
+  max-width: 760px;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: white;
+  box-shadow: 0 0 20px rgba(0, 0, 0, 0.08);
+}
+header {
+  padding: 16px 20px;
+  background: linear-gradient(135deg, #4f46e5, #7c3aed);
+  color: white;
+}
+header h1 { margin: 0; font-size: 22px; letter-spacing: 2px; }
+header p { margin: 4px 0 0 0; font-size: 13px; opacity: 0.85; }
+#box {
+  flex: 1;
+  overflow-y: auto;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  background: #f8fafc;
+}
+.msg {
+  max-width: 80%;
+  padding: 10px 14px;
+  border-radius: 16px;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  font-size: 15px;
+}
+.you {
+  align-self: flex-end;
+  background: #4f46e5;
+  color: white;
+  border-bottom-right-radius: 4px;
+}
+.bot {
+  align-self: flex-start;
+  background: white;
+  color: #1e293b;
+  border: 1px solid #e2e8f0;
+  border-bottom-left-radius: 4px;
+}
+#status {
+  padding: 0 20px;
+  height: 22px;
+  font-size: 13px;
+  color: #64748b;
+  background: #f8fafc;
+}
+#bar {
+  display: flex;
+  gap: 8px;
+  padding: 12px 16px;
+  border-top: 1px solid #e2e8f0;
+  align-items: center;
+}
+#q {
+  flex: 1;
+  padding: 12px 16px;
+  border: 1px solid #cbd5e1;
+  border-radius: 24px;
+  font-size: 15px;
+  outline: none;
+}
+#q:focus { border-color: #4f46e5; }
+button {
+  border: none;
+  border-radius: 20px;
+  padding: 10px 16px;
+  cursor: pointer;
+  font-size: 14px;
+}
+.main { background: #4f46e5; color: white; }
+.main:hover { background: #4338ca; }
+.soft { background: #e2e8f0; color: #1e293b; }
+.soft:hover { background: #cbd5e1; }
+#tools {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  padding: 0 16px 12px 16px;
+  font-size: 13px;
+  color: #475569;
+}
 </style>
 </head>
 <body>
-<h1>THOZHAN</h1>
-<div id="box"></div>
-<div id="status"></div>
-<br>
-<input type="text" id="q" placeholder="Ask THOZHAN...">
-<button onclick="send()">Send</button>
-<button onclick="newChat()">New chat</button>
-<label><input type="checkbox" id="voice" checked> Voice</label>
-<button onclick="listen()">🎤 Speak</button>
+<div id="app">
+  <header>
+    <h1>THOZHAN</h1>
+    <p>Your screen-aware AI friend. Press Ctrl+Shift+X to show me your screen.</p>
+  </header>
+  <div id="box"></div>
+  <div id="status"></div>
+  <div id="bar">
+    <input type="text" id="q" placeholder="Ask THOZHAN...">
+    <button class="soft" onclick="listen()">🎤</button>
+    <button class="main" onclick="send()">Send</button>
+  </div>
+  <div id="tools">
+    <button class="soft" onclick="newChat()">New chat</button>
+    <label><input type="checkbox" id="voice" checked> Voice</label>
+  </div>
+</div>
 <script>
 var waiting = false;
+
+function addMsg(text, who) {
+  var box = document.getElementById("box");
+  var div = document.createElement("div");
+  div.className = "msg " + who;
+  div.textContent = text;
+  box.appendChild(div);
+  box.scrollTop = box.scrollHeight;
+}
 
 function speak(text) {
   var clean = text.replace(/[*#`]/g, "").slice(0, 600);
@@ -114,44 +225,48 @@ function listen() {
 async function send() {
   if (waiting) { return; }
   var q = document.getElementById("q");
-  var box = document.getElementById("box");
   var status = document.getElementById("status");
   var text = q.value;
   if (text.trim() == "") { return; }
 
   waiting = true;
-  box.innerText += "You: " + text + "\\n\\n";
+  addMsg(text, "you");
   status.innerText = "THOZHAN is thinking...";
   q.value = "";
 
-  var res = await fetch("/ask", {
-    method: "POST",
-    headers: {"Content-Type": "application/json"},
-    body: JSON.stringify({question: text})
-  });
-  var data = await res.json();
+  try {
+    var res = await fetch("/ask", {
+      method: "POST",
+      headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({question: text})
+    });
+    var data = await res.json();
+    addMsg(data.answer, "bot");
+    if (document.getElementById("voice").checked) { speak(data.answer); }
+  } catch (err) {
+    addMsg("Could not reach the server. Is web.py still running?", "bot");
+  }
 
   status.innerText = "";
-  box.innerText += "THOZHAN: " + data.answer + "\\n\\n";
-  if (document.getElementById("voice").checked) { speak(data.answer); }
-  box.scrollTop = box.scrollHeight;
   waiting = false;
 }
 
 async function newChat() {
   window.speechSynthesis.cancel();
   await fetch("/new", {method: "POST"});
-  document.getElementById("box").innerText = "";
+  document.getElementById("box").innerHTML = "";
+  addMsg("Fresh chat started. How can I help?", "bot");
 }
 
 document.getElementById("q").addEventListener("keydown", function(e) {
   if (e.key == "Enter") { send(); }
 });
+
+addMsg("Hi! I'm THOZHAN. Ask me anything, or press Ctrl+Shift+X first so I can see your screen.", "bot");
 </script>
 </body>
 </html>
 """
-
 
 @app.route("/")
 def home():
